@@ -26,14 +26,13 @@ public class ActivityList extends javax.swing.JInternalFrame {
         initComponents();
         this.businessActivity = new BusinessActivity();
         initializeComponents();
-        addEventListeners();
         // Configurar codificación
         tablaActividades.setFont(new Font("Arial", Font.PLAIN, 12));
     }
 
     private void initializeComponents() {
         // Configurar el modelo de la tabla
-        String[] columns = {"ID", "Nombre", "Fecha Inicio", "Fecha Fin", "Estado"};
+        String[] columns = {"ID", "Nombre", "Fecha Inicio", "Fecha Fin"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -60,31 +59,18 @@ public class ActivityList extends javax.swing.JInternalFrame {
         tablaActividades.getColumnModel().getColumn(2).setCellRenderer(new DateRenderer());
         tablaActividades.getColumnModel().getColumn(3).setCellRenderer(new DateRenderer());
 
+        tablaActividades.removeColumn(tablaActividades.getColumnModel().getColumn(0));
+        
+
 
         // Obtener el total de registros y cargar primera página
         try {
             totalRecords = businessActivity.getDataPageQuantity("");
-            loadPage(currentPage);
+            loadPage(currentPage,"");
             updatePaginationControls();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error al cargar actividades: " + ex.getMessage());
         }
-    }
-
-    private void addEventListeners() {
-        System.out.println("Configurando manejador de eventos para el botón de búsqueda");
-        btnBuscar.addActionListener(e -> {
-            System.out.println("Botón de búsqueda presionado");
-            try {
-                currentPage = 1;
-                totalRecords = businessActivity.getDataPageQuantity(txtBuscar.getText());
-                System.out.println("Búsqueda por: " + txtBuscar.getText());
-                loadPage(currentPage);
-                updatePaginationControls();
-            } catch (SQLException ex) {
-                System.out.println("Error al buscar actividades: " + ex.getMessage());
-            }
-        });
     }
 
     private void updatePaginationControls() {
@@ -94,12 +80,11 @@ public class ActivityList extends javax.swing.JInternalFrame {
         txtContadorPagina.setText(String.format("%d/%d", currentPage, totalPages));
     }
 
-
-    private void loadPage(int page) {
+    private void loadPage(int page, String searchData) {
         try {
-            System.out.println("Cargando página " + page);
+            System.out.println("Cargando página " + page + " con búsqueda: " + searchData);
             tableModel.setRowCount(0);
-            List<DtoActivity> activities = businessActivity.getDataPage("", page, rowsPerPage);
+            List<DtoActivity> activities = businessActivity.getDataPage(searchData, page, rowsPerPage);
 
             System.out.println("Número de actividades encontradas: " + activities.size());
 
@@ -109,13 +94,9 @@ public class ActivityList extends javax.swing.JInternalFrame {
                     activity.getName(),
                     activity.getBeginDate(),
                     activity.getEndDate(),
-                    activity.isStatus() ? "Activo" : "Inactivo"
                 };
                 tableModel.addRow(row);
                 System.out.println("Agregando actividad: " + activity.getName());
-
-                // Verificar que los datos se agregaron
-                System.out.println("Número de filas en el modelo: " + tableModel.getRowCount());
             }
         } catch (SQLException ex) {
             System.out.println("Error al cargar página: " + ex.getMessage());
@@ -149,6 +130,8 @@ public class ActivityList extends javax.swing.JInternalFrame {
         btnSiguiente = new javax.swing.JButton();
         btnAnterior = new javax.swing.JButton();
         txtContadorPagina = new javax.swing.JTextField();
+
+        setClosable(true);
 
         tablaActividades.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -191,7 +174,7 @@ public class ActivityList extends javax.swing.JInternalFrame {
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(93, 93, 93)
+                .addGap(91, 91, 91)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 684, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
@@ -204,12 +187,12 @@ public class ActivityList extends javax.swing.JInternalFrame {
                         .addComponent(txtContadorPagina, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(btnSiguiente, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(95, Short.MAX_VALUE))
+                .addContainerGap(97, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(64, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(53, 53, 53)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(txtBuscar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnBuscar, javax.swing.GroupLayout.Alignment.TRAILING))
@@ -220,7 +203,7 @@ public class ActivityList extends javax.swing.JInternalFrame {
                     .addComponent(btnSiguiente)
                     .addComponent(btnAnterior)
                     .addComponent(txtContadorPagina, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(57, 57, 57))
+                .addContainerGap(60, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -241,12 +224,28 @@ public class ActivityList extends javax.swing.JInternalFrame {
         try {
             currentPage = 1;
             totalRecords = businessActivity.getDataPageQuantity(txtBuscar.getText());
-            tableModel.setRowCount(0); // Limpiar tabla
-            loadPage(currentPage);
-            tableModel.fireTableDataChanged(); // Notificar cambios
+
+            if (totalRecords == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "No se encontraron actividades que coincidan con la búsqueda",
+                        "Resultado de búsqueda",
+                        JOptionPane.INFORMATION_MESSAGE);
+                tableModel.setRowCount(0);
+                loadPage(currentPage, "");
+                txtBuscar.setText("");
+                txtBuscar.requestFocus();
+                return;
+            }
+
+            tableModel.setRowCount(0);
+            loadPage(currentPage, txtBuscar.getText());
+            tableModel.fireTableDataChanged();
             updatePaginationControls();
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error al buscar actividades: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this,
+                    "Error al buscar actividades: " + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_btnBuscarActionPerformed
 
@@ -254,7 +253,7 @@ public class ActivityList extends javax.swing.JInternalFrame {
         int totalPages = (int) Math.ceil((double) totalRecords / rowsPerPage);
         if (currentPage < totalPages) {
             currentPage++;
-            loadPage(currentPage);
+            loadPage(currentPage, txtBuscar.getText().isEmpty() ? "" : txtBuscar.getText());
             updatePaginationControls();
         }
     }//GEN-LAST:event_btnSiguienteActionPerformed
@@ -262,7 +261,7 @@ public class ActivityList extends javax.swing.JInternalFrame {
     private void btnAnteriorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAnteriorActionPerformed
         if (currentPage > 1) {
             currentPage--;
-            loadPage(currentPage);
+            loadPage(currentPage,txtBuscar.getText().isEmpty() ? "" : txtBuscar.getText());
             updatePaginationControls();
         }
     }//GEN-LAST:event_btnAnteriorActionPerformed
